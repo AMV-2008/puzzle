@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wordle of Fortune</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Nunito:wght@700;800;900&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0D0B1A;--panel:#1A1535;--border:#2D2660;
+  --pink:#E8527A;--pink-dk:#A8304F;--rose:#F4A0BC;
+  --purple:#9B6FD4;--purple-dk:#6A44A8;--lav:#C9B0F0;
+  --gold:#F0C060;--gold-dk:#B08030;
+  --green-bg:#1B5C3A;--green-bd:#2E9960;--green-dk:#0E3320;--green-tx:#7FFFC4;
+  --red-bg:#5C1B1B;--red-bd:#9E3030;--red-dk:#3A0E0E;--red-tx:#FFA0A0;
+}
+html,body{background:var(--bg);margin:0;padding:0;height:100%;}
+#wof-root{
+  font-family:'Nunito Sans',sans-serif;background:var(--bg);
+  padding:0 0 40px;min-height:100vh;position:relative;overflow:hidden;
+}
+.sky-c{position:absolute;inset:0;pointer-events:none;z-index:0;}
+.confetti-c{position:absolute;inset:0;pointer-events:none;z-index:15;}
+
+/* LEGO flower decorations */
+.lego-flowers{position:absolute;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+.lego-flower{position:absolute;}
+
+.content{position:relative;z-index:1;padding:0 14px;}
+
+.header-band{
+  background:linear-gradient(180deg,#1A103A 0%,transparent 100%);
+  padding:18px 16px 10px;text-align:center;margin-bottom:2px;
+}
+.wof-headline{
+  font-family:'Playfair Display',serif;font-weight:900;font-size:26px;
+  color:var(--gold);letter-spacing:1px;
+}
+.howto-toggle{
+  display:inline-flex;align-items:center;gap:6px;margin-top:8px;
+  font-size:12px;font-weight:700;color:var(--lav);
+  background:rgba(155,111,212,0.12);border:1px solid rgba(155,111,212,0.3);
+  border-radius:20px;padding:4px 14px;cursor:pointer;user-select:none;
+}
+.howto-toggle:hover{background:rgba(155,111,212,0.22);}
+.howto-toggle svg{width:14px;height:14px;flex-shrink:0;}
+
+.howto-panel{
+  background:rgba(26,21,53,0.95);border:1px solid var(--border);
+  border-radius:14px;padding:14px;margin:0 0 12px;display:none;
+}
+.howto-panel.open{display:block;}
+.howto-title{font-family:'Nunito',sans-serif;font-weight:900;font-size:12px;
+  color:var(--gold);letter-spacing:0.5px;margin-bottom:10px;text-transform:uppercase;}
+.howto-step{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px;}
+.howto-num{width:20px;height:20px;border-radius:50%;background:var(--purple-dk);
+  color:var(--lav);font-family:'Nunito',sans-serif;font-weight:900;font-size:11px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.howto-text{font-size:12px;color:var(--lav);line-height:1.5;font-weight:600;}
+.howto-legend{display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--lav);}
+.legend-tile{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;
+  justify-content:center;font-family:'Nunito',sans-serif;font-weight:900;font-size:11px;
+  border-bottom:2px solid rgba(0,0,0,0.3);}
+.lt-green{background:var(--green-bg);color:var(--green-tx);}
+.lt-red{background:var(--red-bg);color:var(--red-tx);}
+
+.phrase-board{
+  display:flex;flex-direction:column;gap:8px;align-items:center;
+  margin:0 0 12px;padding:12px 10px;
+  background:rgba(26,21,53,0.7);border-radius:14px;border:1px solid var(--border);
+}
+.pb-row{display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:center;}
+.pb-word{display:flex;gap:3px;}
+.pb-spacer{width:10px;}
+.pb-cell{
+  width:28px;height:28px;border-radius:6px;
+  background:#1A1535;border:1px solid #2D2660;border-bottom:3px solid #120F26;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Nunito',sans-serif;font-weight:900;font-size:13px;color:transparent;
+  transition:background 0.3s,color 0.3s,border-color 0.3s;
+}
+.pb-cell--revealed{background:var(--purple-dk);border-color:var(--purple);border-bottom-color:#3A2070;color:#fff;}
+.pb-cell--qmark{
+  background:transparent;border-color:transparent;border-bottom-color:transparent;
+  color:var(--lav);font-size:18px;font-weight:900;width:20px;
+}
+@keyframes bloom-pop{0%{transform:scale(0.7);opacity:0.4;}60%{transform:scale(1.2);}100%{transform:scale(1);opacity:1;}}
+.pb-cell--anim{animation:bloom-pop 0.35s ease;}
+
+.tried-section{
+  background:rgba(26,21,53,0.7);border-radius:12px;border:1px solid var(--border);
+  padding:10px;margin-bottom:10px;min-height:54px;
+}
+.tried-label{font-size:10px;font-weight:700;color:var(--lav);letter-spacing:1px;
+  text-transform:uppercase;opacity:0.6;text-align:center;margin-bottom:8px;}
+.tried-rows{display:flex;flex-direction:column;gap:4px;align-items:center;}
+.tried-row{display:flex;gap:3px;flex-wrap:wrap;justify-content:center;}
+.t-cell{width:26px;height:26px;border-radius:5px;display:flex;align-items:center;
+  justify-content:center;font-family:'Nunito',sans-serif;font-weight:900;font-size:12px;
+  border-bottom:2px solid rgba(0,0,0,0.35);}
+.t-cell--green{background:var(--green-bg);border-color:var(--green-bd);color:var(--green-tx);}
+.t-cell--red{background:var(--red-bg);border-color:var(--red-bd);color:var(--red-tx);}
+
+.msg-bar{min-height:20px;text-align:center;font-family:'Nunito',sans-serif;
+  font-weight:800;font-size:13px;color:var(--rose);margin-bottom:8px;}
+
+.keyboard{display:flex;flex-direction:column;gap:5px;align-items:center;margin-bottom:10px;}
+.kb-row{display:flex;gap:4px;}
+.kb-key{
+  height:40px;min-width:30px;padding:0 4px;border-radius:8px;
+  background:#221C50;border:1px solid #2D2660;border-bottom:3px solid #0D0B1A;
+  color:var(--lav);font-family:'Nunito',sans-serif;font-weight:800;font-size:13px;
+  cursor:pointer;transition:background 0.2s,color 0.2s,opacity 0.2s;
+}
+.kb-key:active{transform:translateY(2px);border-bottom-width:1px;}
+.kb-key--used{opacity:0.25;cursor:default;}
+.kb-key--green{background:var(--green-bg);border-color:var(--green-bd);color:var(--green-tx);opacity:1;}
+.kb-key--red{background:var(--red-bg);border-color:var(--red-bd);color:var(--red-tx);}
+
+.bottom-bar{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;}
+.attempts-badge{font-size:11px;font-weight:700;color:var(--lav);
+  background:rgba(26,21,53,0.8);border-radius:20px;
+  padding:4px 12px;border:1px solid var(--border);opacity:0.8;}
+
+.win-overlay,.lose-overlay,.response-overlay{
+  position:fixed;inset:0;background:rgba(13,11,26,0.96);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;z-index:20;padding:24px;
+}
+.petals-row{display:flex;gap:6px;justify-content:center;}
+.petal{width:14px;height:14px;border-radius:50% 0 50% 0;background:var(--pink);
+  animation:petal-spin 1.2s ease infinite alternate;}
+.petal:nth-child(2){background:var(--rose);animation-delay:0.15s;border-radius:0 50% 0 50%;}
+.petal:nth-child(3){background:var(--purple);animation-delay:0.3s;}
+.petal:nth-child(4){background:var(--lav);animation-delay:0.45s;border-radius:0 50% 0 50%;}
+.petal:nth-child(5){background:var(--gold);animation-delay:0.6s;}
+@keyframes petal-spin{from{transform:rotate(0deg) scale(1);}to{transform:rotate(20deg) scale(1.3);}}
+
+.win-title{font-family:'Playfair Display',serif;font-weight:900;font-size:30px;color:var(--gold);text-align:center;}
+.win-phrase{font-family:'Playfair Display',serif;font-weight:700;font-size:22px;color:#fff;text-align:center;line-height:1.5;}
+.win-sub{font-size:14px;color:var(--lav);font-weight:600;text-align:center;opacity:0.9;}
+
+.yn-row{display:flex;gap:16px;margin-top:6px;}
+.btn-yes{
+  background:var(--green-bg);border:none;border-bottom:3px solid var(--green-dk);
+  border-radius:12px;color:var(--green-tx);font-family:'Nunito',sans-serif;font-weight:900;
+  font-size:18px;padding:14px 36px;cursor:pointer;transition:transform 0.1s,filter 0.1s;
+}
+.btn-yes:hover{filter:brightness(1.2);}
+.btn-yes:active{transform:translateY(2px);border-bottom-width:1px;}
+.btn-no{
+  background:#2A1535;border:1px solid #3D2660;border-bottom:3px solid #0D0B1A;
+  border-radius:12px;color:var(--lav);font-family:'Nunito',sans-serif;font-weight:900;
+  font-size:18px;padding:14px 36px;cursor:pointer;transition:transform 0.1s,font-size 0.3s,padding 0.3s,opacity 0.3s;
+}
+.btn-no:active{transform:translateY(2px);border-bottom-width:1px;}
+
+.resp-emoji{font-size:64px;line-height:1;}
+.resp-title{font-family:'Playfair Display',serif;font-weight:900;font-size:32px;text-align:center;line-height:1.2;}
+.resp-title--yes{color:var(--gold);}
+.resp-title--no{color:var(--rose);}
+.resp-sub{font-size:15px;color:var(--lav);font-weight:600;text-align:center;max-width:320px;line-height:1.6;opacity:0.9;}
+
+.lose-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--rose);text-align:center;}
+.lose-reveal{font-family:'Playfair Display',serif;font-size:16px;color:#fff;text-align:center;line-height:1.5;max-width:300px;}
+.lose-sub{font-size:12px;color:var(--lav);opacity:0.7;text-align:center;}
+.btn-primary{
+  background:var(--pink);border:none;border-bottom:3px solid var(--pink-dk);
+  border-radius:10px;color:#fff;font-family:'Nunito',sans-serif;font-weight:900;
+  font-size:13px;padding:9px 18px;cursor:pointer;transition:transform 0.1s;
+}
+.btn-primary:active{transform:translateY(2px);border-bottom-width:1px;}
+@keyframes fadeIn{from{opacity:0;transform:scale(0.92);}to{opacity:1;transform:scale(1);}}
+.fade-in{animation:fadeIn 0.4s ease forwards;}
+
+/* gentle float animation for LEGO flowers */
+@keyframes floatA{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-8px) rotate(3deg);}}
+@keyframes floatB{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-6px) rotate(-4deg);}}
+@keyframes floatC{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-10px) rotate(2deg);}}
+</style>
+</head>
+<body>
+<div id="wof-root">
+  <canvas class="sky-c" id="sky"></canvas>
+  <canvas class="confetti-c" id="cc"></canvas>
+
+  <!-- LEGO flower decorations -->
+  <div class="lego-flowers" id="lego-flowers"></div>
+
+  <div class="header-band">
+    <div class="wof-headline">Wordle of Fortune</div>
+    <div style="margin-top:8px;">
+      <span class="howto-toggle" id="howto-toggle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r=".5" fill="currentColor"/></svg>
+        How to play
+      </span>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="howto-panel" id="howto-panel">
+      <div class="howto-title">How to play</div>
+      <div class="howto-step">
+        <div class="howto-num">1</div>
+        <div class="howto-text">A secret phrase is hidden in the board above. Every blank tile is a letter waiting to be found.</div>
+      </div>
+      <div class="howto-step">
+        <div class="howto-num">2</div>
+        <div class="howto-text">Tap any letter on the keyboard. If that letter exists anywhere in the phrase, every tile containing it lights up instantly.</div>
+      </div>
+      <div class="howto-step">
+        <div class="howto-num">3</div>
+        <div class="howto-text">Your guessed letters appear below the board so you can track what you have already tried:</div>
+      </div>
+      <div class="howto-legend">
+        <div class="legend-item"><div class="legend-tile lt-green">W</div> in the phrase</div>
+        <div class="legend-item"><div class="legend-tile lt-red">Z</div> not in the phrase</div>
+      </div>
+      <div class="howto-step" style="margin-top:10px;">
+        <div class="howto-num">4</div>
+        <div class="howto-text">You have <strong style="color:var(--gold);">6 wrong guesses</strong> before the game ends. Reveal the whole phrase to win. Good luck.</div>
+      </div>
+    </div>
+
+    <div id="phrase-board" class="phrase-board"></div>
+    <div class="tried-section">
+      <div class="tried-label">Letters tried</div>
+      <div id="tried-display" class="tried-rows"></div>
+    </div>
+    <div id="msg-bar" class="msg-bar"></div>
+    <div class="keyboard" id="keyboard"></div>
+    <div class="bottom-bar">
+      <span id="attempts-badge" class="attempts-badge"></span>
+    </div>
+  </div>
+
+  <!-- WIN overlay -->
+  <div id="win-overlay" class="win-overlay" style="display:none;">
+    <div class="petals-row">
+      <div class="petal"></div><div class="petal"></div><div class="petal"></div>
+      <div class="petal"></div><div class="petal"></div>
+    </div>
+    <div class="win-title">You found it.</div>
+    <div class="win-phrase">Will you go to prom with me?</div>
+    <div class="win-sub" id="win-sub"></div>
+    <div class="yn-row">
+      <button class="btn-yes" id="btn-yes">Yes!</button>
+      <button class="btn-no" id="btn-no">No</button>
+    </div>
+  </div>
+
+  <!-- YES response -->
+  <div id="yes-overlay" class="response-overlay" style="display:none;">
+    <div class="resp-emoji">🌸</div>
+    <div class="resp-title resp-title--yes fade-in" id="yes-title">Yes!!! Let's go!!</div>
+    <div class="resp-sub fade-in" id="yes-sub">Can't wait. It's going to be the best night. See you there.</div>
+  </div>
+
+  <!-- NO response -->
+  <div id="no-overlay" class="response-overlay" style="display:none;">
+    <div class="resp-emoji">😭</div>
+    <div class="resp-title resp-title--no fade-in">That's okay...</div>
+    <div class="resp-sub fade-in">I'll be crying in the corner. Kidding. Kind of. Hope you change your mind.</div>
+    <button class="btn-primary" id="no-changemind-btn" style="margin-top:4px;">Actually... yes!</button>
+  </div>
+
+  <!-- LOSE overlay — still asks the question -->
+  <div id="lose-overlay" class="lose-overlay" style="display:none;">
+    <div class="petals-row">
+      <div class="petal"></div><div class="petal"></div><div class="petal"></div>
+      <div class="petal"></div><div class="petal"></div>
+    </div>
+    <div class="win-title" style="font-size:24px;color:var(--rose);">You ran out of guesses...</div>
+    <div class="win-phrase" style="font-size:18px;opacity:0.7;">The phrase was: <em style="color:var(--gold);font-style:normal;">Will you go to prom with me?</em></div>
+    <div class="win-phrase" style="margin-top:4px;">But the question still stands.</div>
+    <div class="win-phrase" style="font-size:26px;margin-top:6px;">Will you go to prom with me?</div>
+    <div class="yn-row">
+      <button class="btn-yes" id="lose-btn-yes">Yes!</button>
+      <button class="btn-no" id="lose-btn-no">No</button>
+    </div>
+    <button class="btn-primary" id="lose-retry-btn" style="margin-top:2px;background:transparent;border:1px solid rgba(201,176,240,0.3);color:var(--lav);font-size:11px;padding:6px 14px;border-bottom-width:1px;">try again</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  /* ── LEGO flower SVGs ── */
+  // Each returns an SVG string. Varied colours to scatter around.
+  function legoFlower(petalColor, centerColor, stemColor, leafColor){
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 100" width="60" height="100">
+      <!-- stem -->
+      <rect x="27" y="52" width="6" height="38" rx="3" fill="${stemColor}"/>
+      <!-- leaf left -->
+      <ellipse cx="18" cy="72" rx="11" ry="6" fill="${leafColor}" transform="rotate(-30 18 72)"/>
+      <!-- leaf right -->
+      <ellipse cx="42" cy="78" rx="11" ry="6" fill="${leafColor}" transform="rotate(30 42 78)"/>
+      <!-- petals (8 petals using ellipses rotated around center) -->
+      <g transform="translate(30,30)">
+        <ellipse cx="0" cy="-14" rx="6" ry="10" fill="${petalColor}" opacity="0.95"/>
+        <ellipse cx="0" cy="-14" rx="6" ry="10" fill="${petalColor}" opacity="0.95" transform="rotate(45)"/>
+        <ellipse cx="0" cy="-14" rx="6" ry="10" fill="${petalColor}" opacity="0.95" transform="rotate(90)"/>
+        <ellipse cx="0" cy="-14" rx="6" ry="10" fill="${petalColor}" opacity="0.95" transform="rotate(135)"/>
+        <ellipse cx="0" cy="-14" rx="6" ry="10" fill="${petalColor}" opacity="0.95" transform="rotate(180)"/>
+        <ellipse cx="0" cy="-14" rx="6" ry="10" fill="${petalColor}" opacity="0.95" transform="rotate(225)"/>
+        <ellipse cx="0" cy="-14" rx="6" ry="10" fill="${petalColor}" opacity="0.95" transform="rotate(270)"/>
+        <ellipse cx="0" cy="-14" rx="6" ry="10" fill="${petalColor}" opacity="0.95" transform="rotate(315)"/>
+        <!-- center disc -->
+        <circle cx="0" cy="0" r="9" fill="${centerColor}"/>
+        <!-- center stud bump -->
+        <circle cx="0" cy="0" r="5.5" fill="${centerColor}" opacity="0.7"/>
+        <circle cx="0" cy="-1.5" r="3" fill="rgba(255,255,255,0.25)"/>
+      </g>
+      <!-- stem top connector stud -->
+      <circle cx="30" cy="53" r="3.5" fill="${stemColor}" opacity="0.7"/>
+    </svg>`;
+  }
+
+  function legoTulip(petalColor, stemColor, leafColor){
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 100" width="50" height="100">
+      <!-- stem -->
+      <rect x="22" y="55" width="6" height="35" rx="3" fill="${stemColor}"/>
+      <!-- leaf -->
+      <ellipse cx="15" cy="74" rx="12" ry="5" fill="${leafColor}" transform="rotate(-25 15 74)"/>
+      <!-- tulip head — 3 outer petals -->
+      <ellipse cx="25" cy="40" rx="8" ry="18" fill="${petalColor}"/>
+      <ellipse cx="14" cy="44" rx="7" ry="16" fill="${petalColor}" transform="rotate(-15 14 44)"/>
+      <ellipse cx="36" cy="44" rx="7" ry="16" fill="${petalColor}" transform="rotate(15 36 44)"/>
+      <!-- inner shading -->
+      <ellipse cx="25" cy="38" rx="5" ry="12" fill="rgba(0,0,0,0.12)"/>
+      <!-- stud on stem top -->
+      <circle cx="25" cy="56" r="3.5" fill="${stemColor}" opacity="0.65"/>
+    </svg>`;
+  }
+
+  function legoDaisy(petalColor, centerColor, stemColor, leafColor){
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 95" width="56" height="95">
+      <!-- stem -->
+      <rect x="24" y="48" width="6" height="38" rx="3" fill="${stemColor}"/>
+      <!-- leaves -->
+      <ellipse cx="15" cy="68" rx="10" ry="5" fill="${leafColor}" transform="rotate(-35 15 68)"/>
+      <ellipse cx="40" cy="74" rx="10" ry="5" fill="${leafColor}" transform="rotate(35 40 74)"/>
+      <!-- petals (narrow, daisy style) -->
+      <g transform="translate(28,28)">
+        <ellipse cx="0" cy="-16" rx="4" ry="12" fill="${petalColor}"/>
+        <ellipse cx="0" cy="-16" rx="4" ry="12" fill="${petalColor}" transform="rotate(36)"/>
+        <ellipse cx="0" cy="-16" rx="4" ry="12" fill="${petalColor}" transform="rotate(72)"/>
+        <ellipse cx="0" cy="-16" rx="4" ry="12" fill="${petalColor}" transform="rotate(108)"/>
+        <ellipse cx="0" cy="-16" rx="4" ry="12" fill="${petalColor}" transform="rotate(144)"/>
+        <ellipse cx="0" cy="-16" rx="4" ry="12" fill="${petalColor}" transform="rotate(180)"/>
+        <ellipse cx="0" cy="-16" rx="4" ry="12" fill="${petalColor}" transform="rotate(216)"/>
+        <ellipse cx="0" cy="-16" rx="4" ry="12" fill="${petalColor}" transform="rotate(252)"/>
+        <ellipse cx="0" cy="-16" rx="4" ry="12" fill="${petalColor}" transform="rotate(288)"/>
+        <ellipse cx="0" cy="-16" rx="4" ry="12" fill="${petalColor}" transform="rotate(324)"/>
+        <!-- yellow centre -->
+        <circle cx="0" cy="0" r="9" fill="${centerColor}"/>
+        <circle cx="-1" cy="-1.5" r="4" fill="rgba(255,255,255,0.22)"/>
+      </g>
+      <circle cx="28" cy="49" r="3" fill="${stemColor}" opacity="0.6"/>
+    </svg>`;
+  }
+
+  // Flower configs: [type, ...colors, top%, left%, scale, opacity, animClass]
+  const FLOWER_DEFS = [
+    // type, colors..., top, left, scale, opacity, anim
+    ['flower', '#E8527A','#F0C060','#2E7D32','#388E3C',  2, 2,   0.7, 0.18, 'floatA'],
+    ['tulip',  '#9B6FD4','#2E7D32','#388E3C',            5, 88,  0.75,0.18, 'floatB'],
+    ['daisy',  '#F4A0BC','#F0C060','#2E7D32','#66BB6A',  8, 94,  0.65,0.16, 'floatC'],
+    ['flower', '#C9B0F0','#E8527A','#1B5E20','#2E7D32',  12, -2, 0.8, 0.20, 'floatB'],
+    ['tulip',  '#F0C060','#33691E','#558B2F',            18, 90, 0.7, 0.17, 'floatA'],
+    ['daisy',  '#fff','#F5C400','#2E7D32','#4CAF50',     28, -4, 0.72,0.15, 'floatC'],
+    ['flower', '#F4A0BC','#9B6FD4','#2E7D32','#4CAF50',  38, 96, 0.68,0.19, 'floatA'],
+    ['tulip',  '#E8527A','#1B5E20','#33691E',            48, -3, 0.76,0.16, 'floatB'],
+    ['daisy',  '#C9B0F0','#F0C060','#2E7D32','#66BB6A',  58, 91, 0.7, 0.18, 'floatC'],
+    ['flower', '#F0C060','#E8527A','#1B5E20','#388E3C',  68, -2, 0.65,0.15, 'floatA'],
+    ['tulip',  '#9B6FD4','#2E7D32','#33691E',            75, 93, 0.78,0.17, 'floatB'],
+    ['daisy',  '#F4A0BC','#F5C400','#2E7D32','#4CAF50',  84, 0,  0.7, 0.16, 'floatA'],
+    ['flower', '#fff','#C9B0F0','#2E7D32','#66BB6A',     92, 88, 0.72,0.15, 'floatC'],
+  ];
+
+  function buildLegoFlowers(){
+    const container = document.getElementById('lego-flowers');
+    container.innerHTML = '';
+    FLOWER_DEFS.forEach(def => {
+      const [type, ...rest] = def;
+      let svgStr, top, left, scale, opacity, anim;
+      if(type === 'flower'){
+        const [p,c,st,lf, t,l,sc,op,an] = rest;
+        svgStr = legoFlower(p,c,st,lf);
+        [top,left,scale,opacity,anim] = [t,l,sc,op,an];
+      } else if(type === 'tulip'){
+        const [p,st,lf, t,l,sc,op,an] = rest;
+        svgStr = legoTulip(p,st,lf);
+        [top,left,scale,opacity,anim] = [t,l,sc,op,an];
+      } else {
+        const [p,c,st,lf, t,l,sc,op,an] = rest;
+        svgStr = legoDaisy(p,c,st,lf);
+        [top,left,scale,opacity,anim] = [t,l,sc,op,an];
+      }
+      const el = document.createElement('div');
+      el.className = 'lego-flower';
+      el.style.cssText = `top:${top}%;left:${left}%;transform:scale(${scale});opacity:${opacity};animation:${anim} ${3+Math.random()*2}s ease-in-out infinite;transform-origin:bottom center;`;
+      el.innerHTML = svgStr;
+      container.appendChild(el);
+    });
+  }
+
+  /* ── GAME LOGIC ── */
+  const PHRASE = "WILL YOU GO TO PROM WITH ME";
+  const WORDS = PHRASE.split(' ');
+  const ALL_LETTERS = new Set(PHRASE.replace(/ /g,'').split(''));
+  const MAX_WRONG = 6;
+  const KB_ROWS = [
+    ['Q','W','E','R','T','Y','U','I','O','P'],
+    ['A','S','D','F','G','H','J','K','L'],
+    ['Z','X','C','V','B','N','M']
+  ];
+  let state = {};
+  let confettiAnimId = null;
+  let noClickCount = 0;
+
+  function initStars(){
+    const canvas = document.getElementById('sky');
+    const root = document.getElementById('wof-root');
+    canvas.width = root.offsetWidth || 680;
+    canvas.height = Math.max(root.offsetHeight, 500);
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    for(let i=0;i<90;i++){
+      const x=Math.random()*canvas.width, y=Math.random()*canvas.height*0.45;
+      const r=Math.random()*1.2+0.3;
+      ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(255,255,255,${Math.random()*0.6+0.2})`; ctx.fill();
+    }
+    for(let i=0;i<6;i++){
+      const x=Math.random()*canvas.width, y=Math.random()*canvas.height*0.35;
+      ctx.beginPath(); ctx.arc(x,y,2,0,Math.PI*2);
+      ctx.fillStyle='rgba(255,240,200,0.9)'; ctx.fill();
+    }
+  }
+
+  function launchConfetti(){
+    const canvas = document.getElementById('cc');
+    const root = document.getElementById('wof-root');
+    canvas.width = root.offsetWidth || 680;
+    canvas.height = Math.max(root.offsetHeight, 500);
+    const colors=['#E8527A','#F4A0BC','#9B6FD4','#C9B0F0','#F0C060','#7FFFC4','#fff','#FFD6E7'];
+    const pieces = Array.from({length:160},()=>({
+      x:Math.random()*canvas.width, y:-10-Math.random()*200,
+      w:Math.random()*8+4, h:Math.random()*5+3,
+      color:colors[Math.floor(Math.random()*colors.length)],
+      rot:Math.random()*Math.PI*2, rotSpeed:(Math.random()-0.5)*0.15,
+      vx:(Math.random()-0.5)*2.5, vy:Math.random()*3+2, alpha:1
+    }));
+    function draw(){
+      const ctx=canvas.getContext('2d');
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      let alive=false;
+      pieces.forEach(p=>{
+        p.x+=p.vx; p.y+=p.vy; p.rot+=p.rotSpeed;
+        if(p.y>canvas.height*0.7) p.alpha-=0.02;
+        if(p.alpha>0){
+          alive=true;
+          ctx.save(); ctx.globalAlpha=Math.max(0,p.alpha);
+          ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+          ctx.fillStyle=p.color; ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+          ctx.restore();
+        }
+      });
+      if(alive) confettiAnimId=requestAnimationFrame(draw);
+      else ctx.clearRect(0,0,canvas.width,canvas.height);
+    }
+    if(confettiAnimId) cancelAnimationFrame(confettiAnimId);
+    draw();
+  }
+
+  function initGame(){
+    state={guessedLetters:[],wrongCount:0,gameOver:false,won:false};
+    noClickCount=0;
+    ['win-overlay','yes-overlay','no-overlay','lose-overlay'].forEach(id=>{
+      document.getElementById(id).style.display='none';
+    });
+    document.getElementById('msg-bar').textContent='';
+    const btnNo=document.getElementById('btn-no');
+    btnNo.style.cssText=''; btnNo.textContent='No';
+    if(confettiAnimId){
+      cancelAnimationFrame(confettiAnimId);
+      document.getElementById('cc').getContext('2d').clearRect(0,0,9999,9999);
+    }
+    renderAll();
+    setTimeout(initStars,50);
+  }
+
+  function renderAll(){renderPhraseBoard();renderTriedDisplay();renderKeyboard();renderBadge();}
+
+  function renderPhraseBoard(){
+    const board=document.getElementById('phrase-board'); board.innerHTML='';
+    const lines=[['WILL','YOU','GO'],['TO','PROM','WITH','ME']];
+    let wi=0;
+    lines.forEach((lineWords, lineIdx)=>{
+      const row=document.createElement('div'); row.className='pb-row';
+      lineWords.forEach((word,li)=>{
+        const wIdx=wi;
+        const wg=document.createElement('div'); wg.className='pb-word';
+        for(let ci=0;ci<word.length;ci++){
+          const ch=word[ci], rev=state.guessedLetters.includes(ch);
+          const cell=document.createElement('div');
+          cell.className='pb-cell'+(rev?' pb-cell--revealed':'');
+          cell.id=`pb-${wIdx}-${ci}`; cell.textContent=rev?ch:'';
+          wg.appendChild(cell);
+        }
+        row.appendChild(wg);
+        // after last word on last line, add the question mark
+        const isLastWord = lineIdx===lines.length-1 && li===lineWords.length-1;
+        if(isLastWord){
+          const qm=document.createElement('div');
+          qm.className='pb-cell pb-cell--qmark';
+          qm.textContent='?';
+          row.appendChild(qm);
+        } else if(li<lineWords.length-1){
+          const sp=document.createElement('div'); sp.className='pb-spacer'; row.appendChild(sp);
+        }
+        wi++;
+      });
+      board.appendChild(row);
+    });
+  }
+
+  function renderTriedDisplay(){
+    const c=document.getElementById('tried-display'); c.innerHTML='';
+    if(!state.guessedLetters.length) return;
+    const row=document.createElement('div'); row.className='tried-row';
+    state.guessedLetters.forEach(ch=>{
+      const inP=ALL_LETTERS.has(ch);
+      const cell=document.createElement('div');
+      cell.className='t-cell '+(inP?'t-cell--green':'t-cell--red');
+      cell.textContent=ch; row.appendChild(cell);
+    });
+    c.appendChild(row);
+  }
+
+  function renderKeyboard(){
+    const kb=document.getElementById('keyboard'); kb.innerHTML='';
+    KB_ROWS.forEach(row=>{
+      const rowEl=document.createElement('div'); rowEl.className='kb-row';
+      row.forEach(key=>{
+        const btn=document.createElement('button');
+        btn.className='kb-key'; btn.textContent=key.toLowerCase(); btn.id='kb-'+key;
+        if(state.guessedLetters.includes(key)){
+          const inP=ALL_LETTERS.has(key);
+          btn.classList.add(inP?'kb-key--green':'kb-key--red');
+          if(!inP) btn.classList.add('kb-key--used');
+          btn.disabled=true;
+        }
+        btn.addEventListener('click',()=>guessLetter(key));
+        rowEl.appendChild(btn);
+      });
+      kb.appendChild(rowEl);
+    });
+  }
+
+  function renderBadge(){
+    const left=MAX_WRONG-state.wrongCount;
+    document.getElementById('attempts-badge').textContent=
+      `${left} wrong guess${left!==1?'es':''} remaining`;
+  }
+
+  function guessLetter(ch){
+    if(state.gameOver||state.guessedLetters.includes(ch)) return;
+    state.guessedLetters.push(ch);
+    const inP=ALL_LETTERS.has(ch);
+    if(!inP) state.wrongCount++;
+    renderAll();
+    if(inP){
+      WORDS.forEach((word,w)=>{
+        for(let ci=0;ci<word.length;ci++){
+          if(word[ci]===ch){
+            const el=document.getElementById(`pb-${w}-${ci}`);
+            if(el){el.classList.add('pb-cell--anim');setTimeout(()=>el.classList.remove('pb-cell--anim'),400);}
+          }
+        }
+      });
+    }
+    const allRevealed=PHRASE.replace(/ /g,'').split('').every(l=>state.guessedLetters.includes(l));
+    if(allRevealed){state.gameOver=true;state.won=true;launchConfetti();setTimeout(showWin,900);return;}
+    if(state.wrongCount>=MAX_WRONG){state.gameOver=true;setTimeout(showLose,400);}
+  }
+
+  function showWin(){
+    document.getElementById('win-sub').textContent=
+      `Solved with ${state.wrongCount} wrong guess${state.wrongCount!==1?'es':''}.`;
+    document.getElementById('win-overlay').style.display='flex';
+  }
+  function showLose(){document.getElementById('lose-overlay').style.display='flex';}
+
+  document.getElementById('btn-yes').addEventListener('click',()=>{
+    document.getElementById('win-overlay').style.display='none';
+    document.getElementById('yes-title').textContent='Yes!!! Let\'s go!!';
+    document.getElementById('yes-sub').textContent='Can\'t wait. It\'s going to be the best night. See you there.';
+    launchConfetti();
+    document.getElementById('yes-overlay').style.display='flex';
+  });
+
+  function handleNoClick(sourceOverlayId, btn) {
+    noClickCount++;
+    const msgs = ['Are you sure?', 'Really sure??', 'Last chance...'];
+    if (noClickCount <= msgs.length) {
+      btn.textContent = msgs[noClickCount - 1];
+      btn.style.fontSize = `${Math.max(10, 18 - noClickCount * 3)}px`;
+      btn.style.padding = `${Math.max(6, 14 - noClickCount * 2)}px ${Math.max(14, 36 - noClickCount * 6)}px`;
+    } else {
+      // after enough clicks, finally go to the no screen — never auto-yes
+      document.getElementById(sourceOverlayId).style.display = 'none';
+      document.getElementById('no-overlay').style.display = 'flex';
+    }
+  }
+
+  document.getElementById('btn-no').addEventListener('click', function() {
+    handleNoClick('win-overlay', this);
+  });
+
+  document.getElementById('no-changemind-btn').addEventListener('click',()=>{
+    document.getElementById('no-overlay').style.display='none';
+    document.getElementById('yes-title').textContent='Yes!! That\'s the spirit!';
+    document.getElementById('yes-sub').textContent='Knew you\'d come around. It\'s going to be the best night.';
+    launchConfetti();
+    document.getElementById('yes-overlay').style.display='flex';
+  });
+
+  // Lose screen buttons
+  document.getElementById('lose-btn-yes').addEventListener('click',()=>{
+    document.getElementById('lose-overlay').style.display='none';
+    document.getElementById('yes-title').textContent='Yes!!! Let\'s go!!';
+    document.getElementById('yes-sub').textContent='Can\'t wait. It\'s going to be the best night. See you there.';
+    launchConfetti();
+    document.getElementById('yes-overlay').style.display='flex';
+  });
+
+  document.getElementById('lose-btn-no').addEventListener('click', function() {
+    handleNoClick('lose-overlay', this);
+  });
+
+  document.getElementById('howto-toggle').addEventListener('click',()=>{
+    const panel=document.getElementById('howto-panel');
+    panel.classList.toggle('open');
+    setTimeout(initStars,80);
+  });
+
+  document.getElementById('lose-retry-btn').addEventListener('click',()=>{
+    noClickCount=0;
+    initGame();
+  });
+
+  document.addEventListener('keydown',e=>{
+    if(e.ctrlKey||e.metaKey||e.altKey) return;
+    const k=e.key.toUpperCase();
+    if(/^[A-Z]$/.test(k)) guessLetter(k);
+  });
+
+  window.addEventListener('resize',()=>setTimeout(initStars,100));
+
+  buildLegoFlowers();
+  initGame();
+})();
+</script>
+</body>
+</html>
